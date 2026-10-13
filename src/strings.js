@@ -2,6 +2,11 @@
 export const STRINGS = {
   gate: {
     intro: ['...', 'Beyond me lies the Garden.', 'Only the words open it.'],
+    prompt: 'Speak the words.',
+    wrong: ['Those are not the words.', 'The Garden does not know that name.', 'Nothing grows from that.'],
+    hint: 'The page at my feet speaks. Have you read the book of numbers?',
+    right: ['1688 becomes 8888.', 'Enter, reader.'],
+    remembers: 'The Garden remembers you.',
   },
   counters: (songs, fragments) => `Songs ${songs.found}/${songs.total}   Fragments ${fragments.found}/${fragments.total}`,
 

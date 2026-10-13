@@ -7,6 +7,8 @@ import { browserStorage, createDiscovery, resetProgress } from './discovery.js';
 import { STRINGS } from './strings.js';
 import { FONT_FAMILY, TEST_STRING } from './font.js';
 import { Gatekeeper } from './Gatekeeper.js';
+import { SpeakPrompt } from './SpeakPrompt.js';
+import { createGarden } from './gate.js';
 
 const PLAYER_SPEED = 120;
 const COLORS = {
@@ -15,6 +17,7 @@ const COLORS = {
   shelfEdge: 0x2e1c10,
   spine: 0x77727f,
   void: 0x000000,
+  gold: 0xd4af37,
   player: 0xffffff,
   eye: 0x100818,
 };
@@ -66,9 +69,10 @@ export class RoomScene extends Phaser.Scene {
 
   create() {
     this.room = loadRoom(this.roomName);
-    this.mode = 'walking'; // walking | dialogue | book
+    this.mode = 'walking'; // walking | dialogue | book | input | transition
     this.storage = browserStorage();
     this.discovery = createDiscovery(this.storage);
+    this.garden = createGarden(this.storage);
     this.cursors = this.input.keyboard.createCursorKeys();
     // Action keys are read from the DOM directly: Phaser 3.90 re-emits a keydown when the key is
     // pressed and released within the same frame, which would open and close things twice.
@@ -80,9 +84,11 @@ export class RoomScene extends Phaser.Scene {
     this.placeBooks();
     this.createPlayer();
     this.physics.add.collider(this.player, solids);
+    if (this.room.door && this.doorUnlocked()) this.openDoor({ animate: false });
     if (this.room.gatekeeper) {
-      this.gatekeeper = new Gatekeeper(this, this.room.gatekeeper, tileCenter);
+      this.gatekeeper = new Gatekeeper(this, this.room.gatekeeper, { center: tileCenter, garden: this.garden });
       this.physics.add.collider(this.player, this.gatekeeper.figure);
+      this.speak = new SpeakPrompt(this);
     }
     this.createTint();
     this.dialogue = new DialogueBox(this);
@@ -146,6 +152,33 @@ export class RoomScene extends Phaser.Scene {
     }
   }
 
+  // Only the door into the Garden is ever locked.
+  doorUnlocked() {
+    return this.room.doorTo !== 'garden' || this.garden.open;
+  }
+
+  openDoor({ animate }) {
+    this.doorBlock.destroy();
+    const { x, y } = tileCenter(this.room.door);
+    const doorway = this.add.rectangle(x, y, TILE - 4, TILE, 0x000000).setStrokeStyle(2, COLORS.gold);
+    const glow = this.add.rectangle(x, y, TILE - 12, TILE - 8, COLORS.gold, 0.35);
+    if (!animate) return;
+    doorway.setAlpha(0);
+    glow.setAlpha(0);
+    this.tweens.add({ targets: [doorway, glow], alpha: 1, duration: 900 });
+    this.cameras.main.flash(400, 212, 175, 55);
+  }
+
+  // The right words were spoken: the door appears and he steps out of the way.
+  unlockGarden() {
+    this.garden.unlock();
+    this.mode = 'transition';
+    this.openDoor({ animate: true });
+    this.gatekeeper.stepAside({ side: this.player.x > this.gatekeeper.figure.x ? -1 : 1 });
+    this.updateCounters();
+    this.time.delayedCall(900, () => (this.mode = 'walking'));
+  }
+
   createTint() {
     const { width, height } = this.scale;
     this.tint = this.add.rectangle(0, 0, width, height, 0x000000, 0).setOrigin(0).setDepth(8);
@@ -167,7 +200,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   updateCounters() {
-    const { songs, fragments } = counts(BOOKS, (id) => this.discovery.has(id), false);
+    const { songs, fragments } = counts(BOOKS, (id) => this.discovery.has(id), this.garden.open);
     this.counters.setText(STRINGS.counters(songs, fragments));
   }
 
@@ -189,12 +222,15 @@ export class RoomScene extends Phaser.Scene {
 
   onKeyDown(event) {
     if (event.repeat) return;
+    if (this.mode === 'input') return this.onInputKey(event);
     if (import.meta.env.DEV && this.mode === 'walking' && event.shiftKey && event.code === 'KeyR') {
       resetProgress(this.storage);
       window.location.reload();
       return;
     }
     const confirm = CONFIRM_KEYS.includes(event.code);
+    // Keys the game acts on are used up, so they never also type into a field they just opened.
+    if (confirm || CLOSE_KEYS.includes(event.code)) event.preventDefault();
     if (this.mode === 'walking' && confirm) this.interact();
     else if (this.mode === 'dialogue' && confirm) this.dialogue.advance();
     else if (this.mode === 'dialogue' && event.code === 'KeyX') this.dialogue.skip();
@@ -243,6 +279,33 @@ export class RoomScene extends Phaser.Scene {
   // The dialogue box would cover the player down there, so it goes to the top instead.
   playerIsLow() {
     return this.player.y > this.scale.height / 2;
+  }
+
+  // A question with a typed answer. Movement is locked and Phaser stops capturing keys, so space
+  // and the arrow keys reach the text field.
+  ask(prompt, onAnswer) {
+    this.mode = 'input';
+    this.onAnswer = onAnswer;
+    const spot = this.dialogue.hold(`* ${prompt}`, { atTop: this.playerIsLow() });
+    this.input.keyboard.disableGlobalCapture();
+    this.speak.open(spot);
+  }
+
+  onInputKey(event) {
+    if (event.code === 'Escape') return this.endAsk();
+    const enter = event.code === 'Enter' || event.code === 'NumpadEnter';
+    // Enter while an input method is composing belongs to the input method.
+    if (!enter || event.isComposing || event.keyCode === 229 || !this.speak.value.trim()) return;
+    const answer = this.speak.value;
+    this.endAsk();
+    this.onAnswer(answer);
+  }
+
+  endAsk() {
+    this.speak.close();
+    this.dialogue.hide();
+    this.input.keyboard.enableGlobalCapture();
+    this.mode = 'walking';
   }
 
   closeBook() {

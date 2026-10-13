@@ -99,6 +99,18 @@ body {
   cursor: pointer;
 }
 
+.speak-input {
+  width: 540px;
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 2px solid #fff;
+  background: transparent;
+  color: #fff;
+  font: 22px var(--font);
+  caret-color: #ff4fa3;
+  outline: none;
+}
+
 .book-close:hover,
 .book-close:focus-visible {
   color: #ff4fa3;

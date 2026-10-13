@@ -94,8 +94,22 @@ export class DialogueBox {
     if (this.typing) return this.skip();
     this.box += 1;
     if (this.box < this.boxes.length) return this.startBox();
+    this.hide();
+    this.onDone?.();
+  }
+
+  // Shows a line at once and keeps the box open (for a question); returns where an answer goes.
+  hold(text, { atTop = false } = {}) {
+    this.timer?.remove();
+    this.container.y = atTop ? this.topOffset : 0;
+    this.text.setFlipX(false).setText(text);
+    this.container.setVisible(true);
+    return { x: this.text.x, y: this.text.y + this.container.y + 44 };
+  }
+
+  hide() {
+    this.timer?.remove();
     this.container.setVisible(false);
     this.text.setFlipX(false);
-    this.onDone?.();
   }
 }
