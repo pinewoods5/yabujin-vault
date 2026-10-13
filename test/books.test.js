@@ -85,6 +85,16 @@ test('every library book has a place, and the first five songs kept theirs', () 
   assert.equal(new Set(Object.values(at).map(String)).size, 28);
 });
 
+test('the five Garden books stand on the Garden shelf', () => {
+  const { books } = validateBooks(booksData);
+  const { placed, problems } = placeBooks(books, loadRoom('garden'));
+  assert.deepEqual(problems, []);
+  assert.deepEqual(
+    placed.map(({ book }) => book.id).sort(),
+    books.filter((b) => b.room === 'garden').map((b) => b.id).sort(),
+  );
+});
+
 test('placement problems are reported', () => {
   const room = { name: 'library', slots: [{ shelf: 1, col: 1, row: 1 }], lectern: null, shelves: { 1: ['a', 'nope', 'b'], 2: ['c'] } };
   const { books } = validateBooks([lore({ id: 'a' }), lore({ id: 'b' }), lore({ id: 'c', room: 'garden' }), lore({ id: 'd', special: 'locked-page' })]);

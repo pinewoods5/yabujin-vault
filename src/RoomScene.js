@@ -12,7 +12,6 @@ import { createGarden } from './gate.js';
 
 const PLAYER_SPEED = 120;
 const COLORS = {
-  wall: 0x2b2140,
   shelf: 0x5a3a22,
   shelfEdge: 0x2e1c10,
   spine: 0x77727f,
@@ -31,6 +30,7 @@ const CLOSE_KEYS = ['Escape', 'KeyX', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'Arro
 const FOUND_COLORS = [0xff4fa3, 0x7cf3ff, 0xc8ff5a, 0xffb347, 0xb28cff, 0xff6b6b];
 const PAGE_TINT_ALPHA = 0.35;
 const ROOM_TINT_ALPHA = 0.18;
+const FADE_MS = 250;
 
 const warn = (problem) => console.warn(`[Yabujin Vault] ${problem}`);
 const checked = validateBooks(booksData);
@@ -63,12 +63,19 @@ export class RoomScene extends Phaser.Scene {
     super('room');
   }
 
+  // A page load always starts in the library; doors restart the scene in the room behind them.
   init(data) {
     this.roomName = data?.room ?? 'library';
+    this.arriving = Boolean(data?.arriving);
   }
 
   create() {
+    // The scene object is reused when it restarts in another room: forget the last room's things.
+    this.gatekeeper = null;
+    this.speak = null;
+    this.doorOpen = false;
     this.room = loadRoom(this.roomName);
+    this.cameras.main.setBackgroundColor(this.room.colors.floor).fadeIn(FADE_MS);
     this.mode = 'walking'; // walking | dialogue | book | input | transition
     this.storage = browserStorage();
     this.discovery = createDiscovery(this.storage);
@@ -107,9 +114,10 @@ export class RoomScene extends Phaser.Scene {
       solids.add(rect);
       return rect;
     };
-    this.room.walls.forEach((tile) => addTile(tile, COLORS.wall));
+    this.room.walls.forEach((tile) => addTile(tile, this.room.colors.wall));
     this.room.shelfTiles.forEach((tile) => addTile(tile, COLORS.shelf).setStrokeStyle(2, COLORS.shelfEdge));
-    this.room.voids.forEach((tile) => this.add.rectangle(tileCenter(tile).x, tileCenter(tile).y, TILE, TILE, COLORS.void));
+    // Outside the room stays black, above the room's tint.
+    this.room.voids.forEach((tile) => this.add.rectangle(tileCenter(tile).x, tileCenter(tile).y, TILE, TILE, COLORS.void).setDepth(9));
     if (this.room.lectern) {
       const { x, y } = tileCenter(this.room.lectern);
       solids.add(this.add.rectangle(x, y + 4, 24, 20, COLORS.shelf).setStrokeStyle(2, COLORS.shelfEdge));
@@ -117,7 +125,7 @@ export class RoomScene extends Phaser.Scene {
     if (this.room.door) {
       // A closed door is just more wall, until it opens.
       const { x, y } = tileCenter(this.room.door);
-      this.doorBlock = this.add.rectangle(x, y, TILE, TILE, COLORS.wall);
+      this.doorBlock = this.add.rectangle(x, y, TILE, TILE, this.room.colors.wall);
       solids.add(this.doorBlock);
     }
     return solids;
@@ -159,6 +167,7 @@ export class RoomScene extends Phaser.Scene {
 
   openDoor({ animate }) {
     this.doorBlock.destroy();
+    this.doorOpen = true;
     const { x, y } = tileCenter(this.room.door);
     const doorway = this.add.rectangle(x, y, TILE - 4, TILE, 0x000000).setStrokeStyle(2, COLORS.gold);
     const glow = this.add.rectangle(x, y, TILE - 12, TILE - 8, COLORS.gold, 0.35);
@@ -211,13 +220,23 @@ export class RoomScene extends Phaser.Scene {
     this.refreshShelves();
   }
 
+  // Through a door you arrive next to it, facing away from it.
   createPlayer() {
-    const { x, y } = tileCenter(this.room.spawn);
+    const { spawn, door, doorStep } = this.room;
+    const start = this.arriving ? doorStep : spawn;
+    const { x, y } = tileCenter(start);
     this.player = this.add.rectangle(x, y, 18, 22, COLORS.player).setDepth(5);
     this.physics.add.existing(this.player);
     this.player.body.setCollideWorldBounds(true);
     this.eye = this.add.rectangle(x, y, 6, 6, COLORS.eye).setDepth(6);
-    this.facing = DOWN;
+    this.facing = this.arriving ? { x: doorStep.col - door.col, y: doorStep.row - door.row } : DOWN;
+  }
+
+  goThrough() {
+    this.mode = 'transition';
+    this.player.body.setVelocity(0, 0);
+    this.cameras.main.fadeOut(FADE_MS);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart({ room: this.room.doorTo, arriving: true }));
   }
 
   onKeyDown(event) {
@@ -334,6 +353,16 @@ export class RoomScene extends Phaser.Scene {
     this.player.body.setVelocity(velocity.x, velocity.y);
     this.updateFacing(dx, dy);
     this.eye.setPosition(this.player.x + this.facing.x * 5, this.player.y + this.facing.y * 6);
+
+    if (this.doorOpen && this.walkingIntoDoor(dx, dy)) this.goThrough();
+  }
+
+  // On the tile in front of an open door and heading for it: no need to line up with the gap.
+  walkingIntoDoor(dx, dy) {
+    const { door, doorStep } = this.room;
+    const here = { col: Math.floor(this.player.x / TILE), row: Math.floor(this.player.y / TILE) };
+    const heading = dx * (door.col - doorStep.col) + dy * (door.row - doorStep.row);
+    return heading > 0 && tileKey(here) === tileKey(doorStep);
   }
 
   updateFacing(dx, dy) {

@@ -17,6 +17,17 @@ test('the library is 20×15 with a start, the Gatekeeper, a door and nine 3-slot
   }
 });
 
+test('the Garden is a small room with its door on top and one 5-slot shelf', () => {
+  const room = loadRoom('garden');
+  assert.deepEqual(room.door, { col: 9, row: 3 });
+  assert.deepEqual(room.doorStep, { col: 9, row: 4 });
+  assert.deepEqual(room.spawn, room.doorStep);
+  assert.equal(room.doorTo, 'library');
+  assert.equal(room.slots.length, 5);
+  assert.ok(room.slots.every((slot) => slot.shelf === 1));
+  assert.equal(loadRoom('library').doorTo, 'garden');
+});
+
 test('every room is closed: no floor touches the edge or the void (doors are the way out)', () => {
   for (const [name, { map }] of Object.entries(ROOMS)) {
     const at = (col, row) => map[row]?.[col] ?? ' ';
@@ -43,6 +54,7 @@ test('bad maps are rejected', () => {
   assert.throws(() => parseRoom(['###', '#P##', '###']), /wide/);
   assert.throws(() => parseRoom(['###', '#x#', '###']), /Unknown room tile/);
   assert.throws(() => parseRoom(['###', '#.#', '###']), /no P/);
+  assert.deepEqual(parseRoom(['#D#', '#.#', '###']).spawn, { col: 1, row: 1 });
   assert.throws(() => parseRoom(['####', '#PP#', '####']), /more than one P/);
   assert.throws(() => parseRoom(['#####', '#PLL#', '#####']), /more than one L/);
   assert.throws(() => parseRoom(['#####', '#P#D#', '#####']), /no floor next to it/);

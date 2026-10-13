@@ -1,16 +1,17 @@
 export const TILE = 32;
 
 // Every room is a 20×15 tile map (640×480) plus what stands on its shelves.
-// #  wall            .  floor             P  player start
+// #  wall            .  floor             P  player start (else: next to the door)
 // =  empty shelf     1–9  a book slot on that shelf, filled left to right from `shelves`
 // L  lectern holding the room's "locked-page" book
 // G  the Gatekeeper (stands on floor)
 // D  door in a wall, leading to `doorTo`
 //    (space) nothing: outside the room
-// `tint` washes the whole room in a colour (null = none).
+// `tint` washes the whole room in a colour (null = none); `colors` are the floor and walls.
 export const ROOMS = {
   library: {
     tint: null,
+    colors: { floor: 0x100818, wall: 0x2b2140 },
     map: [
       '####################',
       '#..................#',
@@ -40,6 +41,32 @@ export const ROOMS = {
       7: ['crystal-helix', 'the-great-erasure', 'twenty-four-days'],
       8: ['boing', 'hardstyle-drill-2009-nokia-angelz', 'the-archivists'],
       9: ['laumiu-dovanos', 'mereana-mordegard-glesgorv', 'limbo'],
+    },
+  },
+  // The Secret Garden: a small room behind the Gatekeeper's door.
+  garden: {
+    tint: '#d4af37',
+    colors: { floor: 0x0c1a10, wall: 0x24402a },
+    map: [
+      '                    ',
+      '                    ',
+      '                    ',
+      '    #####D######    ',
+      '    #..........#    ',
+      '    #..........#    ',
+      '    #..11111...#    ',
+      '    #..........#    ',
+      '    #..........#    ',
+      '    #..........#    ',
+      '    ############    ',
+      '                    ',
+      '                    ',
+      '                    ',
+      '                    ',
+    ],
+    doorTo: 'library',
+    shelves: {
+      1: ['secret-garden-8888', 'potion-of-wishes-8888', 'dear-gatekeeper-poem', 'early-works-bootleg', 'song-8888'],
     },
   },
 };
@@ -78,7 +105,7 @@ export function parseRoom(map) {
     });
   });
 
-  if (!spawn) throw new Error('Room has no P (player start)');
+  if (!spawn && !door) throw new Error('Room has no P (player start) and no door to arrive through');
 
   // Where you stand after coming through the door: the floor tile next to it.
   const walkable = (col, row) => '.PG'.includes(map[row]?.[col] ?? '#');
@@ -87,10 +114,10 @@ export function parseRoom(map) {
     .find(({ col, row }) => walkable(col, row));
   if (door && !doorStep) throw new Error('The door (D) has no floor next to it');
 
-  return { cols, rows, walls, shelfTiles, slots, voids, spawn, lectern, gatekeeper, door, doorStep };
+  return { cols, rows, walls, shelfTiles, slots, voids, spawn: spawn ?? doorStep, lectern, gatekeeper, door, doorStep };
 }
 
 export function loadRoom(name) {
-  const { map, shelves, tint, doorTo } = ROOMS[name];
-  return { name, ...parseRoom(map), shelves, tint, doorTo };
+  const { map, shelves, tint, colors, doorTo } = ROOMS[name];
+  return { name, ...parseRoom(map), shelves, tint, colors, doorTo };
 }
