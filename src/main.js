@@ -9,5 +9,6 @@ new Phaser.Game({
   backgroundColor: '#100818',
   pixelArt: true,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+  physics: { default: 'arcade', arcade: { debug: false } },
   scene: [LibraryScene],
 });
