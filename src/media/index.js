@@ -1,7 +1,8 @@
 import { createYouTubePlayer } from './youtube.js';
 
-// One adapter per song source. An adapter is called as (url, container, { onStatus }), renders a
-// visible player inside container and returns { destroy() }, which must stop all sound.
+// One adapter per song source. An adapter is called as (url, container, { start, onStatus }),
+// renders a visible player inside container, starts playing at `start` seconds (if given) and
+// returns { destroy() }, which must stop all sound.
 // onStatus gets 'loading' | 'playing' | 'paused' | 'ended' | 'needs-click',
 // or { error: 'gone' | 'sealed' | 'unreachable' } after the adapter has removed its player.
 // Adding SoundCloud later: write media/soundcloud.js with the same shape and register it here.

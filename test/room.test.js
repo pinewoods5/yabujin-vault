@@ -1,24 +1,30 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAP, parseRoom } from '../src/room.js';
+import { ROOMS, parseRoom, loadRoom } from '../src/room.js';
 
-test('the library map is 20×15 tiles with one start and three 3-slot shelves', () => {
-  const room = parseRoom();
+test('the library is 20×15 with a start, a lectern and nine 3-slot shelves', () => {
+  const room = loadRoom('library');
   assert.equal(room.cols, 20);
   assert.equal(room.rows, 15);
-  assert.ok(room.spawn);
-  for (const shelf of [1, 2, 3]) {
+  assert.deepEqual(room.spawn, { col: 4, row: 12 });
+  assert.deepEqual(room.lectern, { col: 9, row: 12 });
+  for (let shelf = 1; shelf <= 9; shelf += 1) {
     assert.equal(room.slots.filter((s) => s.shelf === shelf).length, 3, `shelf ${shelf}`);
   }
 });
 
-test('the library is closed: every border tile is a wall', () => {
-  const last = MAP.length - 1;
-  MAP.forEach((line, row) => {
-    [...line].forEach((ch, col) => {
-      if (row === 0 || row === last || col === 0 || col === line.length - 1) assert.equal(ch, '#', `${col},${row}`);
+test('every room is closed: no floor touches the edge or the void', () => {
+  for (const [name, { map }] of Object.entries(ROOMS)) {
+    const at = (col, row) => map[row]?.[col] ?? ' ';
+    map.forEach((line, row) => {
+      [...line].forEach((ch, col) => {
+        if (ch === '#' || ch === ' ') return;
+        for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          assert.notEqual(at(col + dc, row + dr), ' ', `${name}: ${ch} at ${col},${row} is open to the outside`);
+        }
+      });
     });
-  });
+  }
 });
 
 test('slots on a shelf come out left to right', () => {
@@ -34,4 +40,5 @@ test('bad maps are rejected', () => {
   assert.throws(() => parseRoom(['###', '#x#', '###']), /Unknown room tile/);
   assert.throws(() => parseRoom(['###', '#.#', '###']), /no P/);
   assert.throws(() => parseRoom(['####', '#PP#', '####']), /more than one P/);
+  assert.throws(() => parseRoom(['#####', '#PLL#', '#####']), /more than one L/);
 });

@@ -5,6 +5,7 @@ const HEIGHT = 132;
 
 // Undertale-style box at the bottom of the screen. Text types out one character at a time;
 // skip() shows the whole page, advance() skips or turns to the next page.
+// Pages are { text }.
 export class DialogueBox {
   constructor(scene) {
     this.scene = scene;
@@ -29,22 +30,22 @@ export class DialogueBox {
     return this.shown < this.current.length;
   }
 
-  show(pages, onDone) {
+  show(pages, { onDone } = {}) {
     // Wrap up front so words don't jump lines while typing, and split pages that don't fit.
-    this.pages = pages.flatMap((page) => {
-      const lines = this.text.getWrappedText(page);
-      const chunks = [];
-      for (let i = 0; i < lines.length; i += MAX_LINES) chunks.push(lines.slice(i, i + MAX_LINES).join('\n'));
-      return chunks;
+    this.boxes = pages.flatMap((page) => {
+      const lines = this.text.getWrappedText(page.text);
+      const boxes = [];
+      for (let i = 0; i < lines.length; i += MAX_LINES) boxes.push({ ...page, lines: lines.slice(i, i + MAX_LINES) });
+      return boxes;
     });
-    this.page = 0;
+    this.box = 0;
     this.onDone = onDone;
     this.container.setVisible(true);
-    this.startPage();
+    this.startBox();
   }
 
-  startPage() {
-    this.current = this.pages[this.page];
+  startBox() {
+    this.current = this.boxes[this.box].lines.join('\n');
     this.shown = 0;
     this.text.setText('');
     this.timer = this.scene.time.addEvent({ delay: CHAR_DELAY_MS, loop: true, callback: () => this.typeNext() });
@@ -65,8 +66,8 @@ export class DialogueBox {
 
   advance() {
     if (this.typing) return this.skip();
-    this.page += 1;
-    if (this.page < this.pages.length) return this.startPage();
+    this.box += 1;
+    if (this.box < this.boxes.length) return this.startBox();
     this.container.setVisible(false);
     this.onDone?.();
   }

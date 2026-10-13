@@ -1,10 +1,7 @@
 // Every piece of in-game text lives here, so wording can be changed in one place.
 export const STRINGS = {
-  discovered: (count, total) => `Discovered: ${count}/${total}`,
-  found: (title, year) => `* You found "${title}"${year ? ` (${year})` : ''}.`,
-  emptyLore: '* Nothing has been written about this one yet.',
+  counters: (songs, fragments) => `Songs ${songs.found}/${songs.total}   Fragments ${fragments.found}/${fragments.total}`,
 
-  bookTitle: (title, year) => (year ? `${title} (${year})` : title),
   closeHint: '[X/Esc] Close',
   closeLabel: 'Close the book',
   focusHint: 'Click outside the player to use the keys again.',

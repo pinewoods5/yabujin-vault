@@ -55,7 +55,7 @@ export async function checkSealed(videoId) {
   return 'sealed';
 }
 
-export function createYouTubePlayer(url, container, { onStatus }) {
+export function createYouTubePlayer(url, container, { start, onStatus }) {
   let player = null;
   let disposed = false; // the player is torn down
   let closed = false; // the book was closed: report nothing more
@@ -111,7 +111,7 @@ export function createYouTubePlayer(url, container, { onStatus }) {
         width: WIDTH,
         height: HEIGHT,
         videoId,
-        playerVars: { autoplay: 1, playsinline: 1, rel: 0 },
+        playerVars: { autoplay: 1, playsinline: 1, rel: 0, ...(start ? { start: Math.floor(start) } : {}) },
         events: {
           onReady: () => {
             if (disposed) return;

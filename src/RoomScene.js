@@ -1,14 +1,21 @@
 import Phaser from 'phaser';
-import songsData from '../data/songs.json';
-import { TILE, parseRoom } from './room.js';
-import { validateSongs, placeBooks, dialoguePages } from './songs.js';
+import booksData from '../data/books.json';
+import { TILE, loadRoom } from './room.js';
+import { validateBooks, placeBooks, bookPages, isVisible, counts } from './books.js';
 import { DialogueBox } from './DialogueBox.js';
-import { browserStorage, createDiscovery } from './discovery.js';
+import { browserStorage, createDiscovery, resetProgress } from './discovery.js';
 import { STRINGS } from './strings.js';
-import { BookOverlay } from './BookOverlay.js';
 
 const PLAYER_SPEED = 120;
-const COLORS = { wall: 0x2b2140, shelf: 0x5a3a22, shelfEdge: 0x2e1c10, spine: 0x77727f, player: 0xffffff, eye: 0x100818 };
+const COLORS = {
+  wall: 0x2b2140,
+  shelf: 0x5a3a22,
+  shelfEdge: 0x2e1c10,
+  spine: 0x77727f,
+  void: 0x000000,
+  player: 0xffffff,
+  eye: 0x100818,
+};
 const UP = { x: 0, y: -1 };
 const DOWN = { x: 0, y: 1 };
 const LEFT = { x: -1, y: 0 };
@@ -17,6 +24,22 @@ const CONFIRM_KEYS = ['KeyZ', 'Enter', 'NumpadEnter'];
 // Arrow keys close the book too: walking away from the shelf stops the music.
 const CLOSE_KEYS = ['Escape', 'KeyX', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 const FOUND_COLORS = [0xff4fa3, 0x7cf3ff, 0xc8ff5a, 0xffb347, 0xb28cff, 0xff6b6b];
+
+const warn = (problem) => console.warn(`[Yabujin Vault] ${problem}`);
+const checked = validateBooks(booksData);
+checked.problems.forEach(warn);
+const BOOKS = checked.books;
+
+// Where each room's books stand, worked out (and warned about) once per room.
+const placements = new Map();
+function placementFor(room) {
+  if (!placements.has(room.name)) {
+    const { placed, problems } = placeBooks(BOOKS, room);
+    problems.forEach(warn);
+    placements.set(room.name, placed);
+  }
+  return placements.get(room.name);
+}
 
 const tileCenter = ({ col, row }) => ({ x: col * TILE + TILE / 2, y: row * TILE + TILE / 2 });
 const tileKey = ({ col, row }) => `${col},${row}`;
@@ -28,14 +51,20 @@ function foundColor(id) {
   return FOUND_COLORS[hash % FOUND_COLORS.length];
 }
 
-export class LibraryScene extends Phaser.Scene {
+export class RoomScene extends Phaser.Scene {
   constructor() {
-    super('library');
+    super('room');
+  }
+
+  init(data) {
+    this.roomName = data?.room ?? 'library';
   }
 
   create() {
-    this.room = parseRoom();
+    this.room = loadRoom(this.roomName);
     this.mode = 'walking'; // walking | dialogue | book
+    this.storage = browserStorage();
+    this.discovery = createDiscovery(this.storage);
     this.cursors = this.input.keyboard.createCursorKeys();
     // Action keys are read from the DOM directly: Phaser 3.90 re-emits a keydown when the key is
     // pressed and released within the same frame, which would open and close things twice.
@@ -48,11 +77,10 @@ export class LibraryScene extends Phaser.Scene {
     this.createPlayer();
     this.physics.add.collider(this.player, solids);
     this.dialogue = new DialogueBox(this);
-    this.createCounter();
+    this.createCounters();
 
-    this.overlay = new BookOverlay(document.getElementById('book-overlay'), {
-      onCloseRequest: () => this.closeBook(),
-    });
+    this.overlay = this.registry.get('overlay');
+    this.overlay.onCloseRequest = () => this.closeBook();
     this.events.once('shutdown', () => this.overlay.close());
   }
 
@@ -65,44 +93,57 @@ export class LibraryScene extends Phaser.Scene {
       return rect;
     };
     this.room.walls.forEach((tile) => addTile(tile, COLORS.wall));
-    this.room.shelves.forEach((tile) => addTile(tile, COLORS.shelf).setStrokeStyle(2, COLORS.shelfEdge));
+    this.room.shelfTiles.forEach((tile) => addTile(tile, COLORS.shelf).setStrokeStyle(2, COLORS.shelfEdge));
+    this.room.voids.forEach((tile) => this.add.rectangle(tileCenter(tile).x, tileCenter(tile).y, TILE, TILE, COLORS.void));
+    if (this.room.lectern) {
+      const { x, y } = tileCenter(this.room.lectern);
+      solids.add(this.add.rectangle(x, y + 4, 24, 20, COLORS.shelf).setStrokeStyle(2, COLORS.shelfEdge));
+    }
     return solids;
   }
 
   placeBooks() {
-    const checked = validateSongs(songsData);
-    const placed = placeBooks(checked.songs, this.room.slots);
-    [...checked.problems, ...placed.problems].forEach((problem) => console.warn(`[Yabujin Vault] ${problem}`));
-
     // Books by tile, so the player can find the one in front of them.
     this.books = new Map();
-    for (const { song, slot } of placed.books) {
-      const { x, y } = tileCenter(slot);
-      const spine = this.add.rectangle(x, y, 12, 24, COLORS.spine).setStrokeStyle(2, COLORS.shelfEdge).setDepth(1);
-      this.books.set(tileKey(slot), { song, spine });
+    for (const { book, tile } of placementFor(this.room)) {
+      const { x, y } = tileCenter(tile);
+      const onLectern = this.room.lectern && tileKey(tile) === tileKey(this.room.lectern);
+      const spine = this.add
+        .rectangle(x, onLectern ? y - 2 : y, onLectern ? 18 : 12, onLectern ? 10 : 24, COLORS.spine)
+        .setStrokeStyle(2, COLORS.shelfEdge)
+        .setDepth(1);
+      if (this.discovery.has(book.id)) spine.setFillStyle(foundColor(book.id));
+      this.books.set(tileKey(tile), { book, spine, visible: false });
     }
+    this.refreshShelves();
+  }
 
-    this.discovery = createDiscovery(browserStorage(), [...this.books.values()].map((book) => book.song.id));
-    for (const book of this.books.values()) {
-      if (this.discovery.has(book.song.id)) book.spine.setFillStyle(foundColor(book.song.id));
+  // Shows books whose "requires" is met by the songs found so far.
+  refreshShelves() {
+    const songsFound = BOOKS.filter((book) => book.type === 'song' && this.discovery.has(book.id)).length;
+    for (const entry of this.books.values()) {
+      entry.visible = isVisible(entry.book, songsFound);
+      entry.spine.setVisible(entry.visible);
     }
   }
 
-  createCounter() {
-    this.counter = this.add
+  createCounters() {
+    this.counters = this.add
       .text(12, 8, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffffff' })
       .setDepth(10);
-    this.updateCounter();
+    this.updateCounters();
   }
 
-  updateCounter() {
-    this.counter.setText(STRINGS.discovered(this.discovery.count, this.discovery.total));
+  updateCounters() {
+    const { songs, fragments } = counts(BOOKS, (id) => this.discovery.has(id), false);
+    this.counters.setText(STRINGS.counters(songs, fragments));
   }
 
-  discover(book) {
-    if (!this.discovery.add(book.song.id)) return;
-    book.spine.setFillStyle(foundColor(book.song.id));
-    this.updateCounter();
+  discover(entry) {
+    if (!this.discovery.add(entry.book.id)) return;
+    entry.spine.setFillStyle(foundColor(entry.book.id));
+    this.updateCounters();
+    this.refreshShelves();
   }
 
   createPlayer() {
@@ -116,6 +157,11 @@ export class LibraryScene extends Phaser.Scene {
 
   onKeyDown(event) {
     if (event.repeat) return;
+    if (import.meta.env.DEV && this.mode === 'walking' && event.shiftKey && event.code === 'KeyR') {
+      resetProgress(this.storage);
+      window.location.reload();
+      return;
+    }
     const confirm = CONFIRM_KEYS.includes(event.code);
     if (this.mode === 'walking' && confirm) this.interact();
     else if (this.mode === 'dialogue' && confirm) this.dialogue.advance();
@@ -124,13 +170,24 @@ export class LibraryScene extends Phaser.Scene {
   }
 
   interact() {
-    const book = this.books.get(tileKey(this.frontTile()));
-    if (!book) return;
+    const entry = this.books.get(tileKey(this.frontTile()));
+    if (entry?.visible) this.read(entry);
+  }
+
+  // Songs: pages (or just the title), then the book opens and plays. Lore: pages only.
+  read(entry) {
+    const { book } = entry;
     this.mode = 'dialogue';
-    this.dialogue.show(dialoguePages(book.song), () => {
-      this.discover(book);
-      this.mode = 'book';
-      this.overlay.open(book.song);
+    this.dialogue.show(bookPages(book), {
+      onDone: () => {
+        this.discover(entry);
+        if (book.type !== 'song') {
+          this.mode = 'walking';
+          return;
+        }
+        this.mode = 'book';
+        this.overlay.open(book);
+      },
     });
   }
 

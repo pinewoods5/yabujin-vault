@@ -1,0 +1,348 @@
+[
+  {
+    "id": "hex-ff81k",
+    "type": "song",
+    "room": "library",
+    "title": "HEX: FF81K",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=BDqCazX1wzw",
+    "pages": []
+  },
+  {
+    "id": "angel-witta-knife",
+    "type": "song",
+    "room": "library",
+    "title": "Angel Witta Knife",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=xHqrdHsQSEg",
+    "pages": []
+  },
+  {
+    "id": "pink-windows",
+    "type": "song",
+    "room": "library",
+    "title": "Pink Windows",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=JiLMyMAcMjA",
+    "pages": []
+  },
+  {
+    "id": "azeroy-garden-8888",
+    "type": "song",
+    "room": "library",
+    "title": "Azeroy Garden 8888",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=THkGtrIy3eU",
+    "pages": []
+  },
+  {
+    "id": "baroque",
+    "type": "song",
+    "room": "library",
+    "title": "Baroque",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=g5-FLcK0Czk",
+    "pages": []
+  },
+  {
+    "id": "chalice-of-mind",
+    "type": "song",
+    "room": "library",
+    "title": "CHALICE OF MIND",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=CPJdg54Cy3M",
+    "pages": []
+  },
+  {
+    "id": "gambino",
+    "type": "song",
+    "room": "library",
+    "title": "Gambino",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=hTpKxguDmMY",
+    "pages": []
+  },
+  {
+    "id": "crystal-helix",
+    "type": "song",
+    "room": "library",
+    "title": "✦ ☥ Crystal Helix ♁",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=KGBr6fJ6V-w",
+    "pages": []
+  },
+  {
+    "id": "hardstyle-drill-2009-nokia-angelz",
+    "type": "song",
+    "room": "library",
+    "title": "Hardstyle Drill 2009 Nokia Angelz مسدسات مجمدة 1.6",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=OecjNdflGjo",
+    "pages": []
+  },
+  {
+    "id": "mereana-mordegard-glesgorv",
+    "type": "song",
+    "room": "library",
+    "title": "Mereana Mordegard Glesgorv",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=9YfF0_pxpX4",
+    "pages": []
+  },
+  {
+    "id": "mobile-terror-1616",
+    "type": "song",
+    "room": "library",
+    "title": "Mobile Terror 1616",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=TkqCMGq8ilI",
+    "pages": []
+  },
+  {
+    "id": "the-first-page",
+    "type": "lore",
+    "room": "library",
+    "title": "The First Page",
+    "pages": [
+      "On September 1, 2016, someone calling themselves naga uploaded an instrumental track called \"gal games.\"",
+      "The original has been deleted. It survives only as a copy a fan archive uploaded to YouTube in 2021.",
+      "The same naga released a first EP, fezome, on New Year's Eve that year."
+    ]
+  },
+  {
+    "id": "too-many-names",
+    "type": "lore",
+    "room": "library",
+    "title": "The Book of Too Many Names",
+    "pages": [
+      "DJ GYROTTA ZAO. YABHIEL. ELIXIR NOMAD. tailandietis85.",
+      "Evil52Guard. swine antarctica. Dj Ernest Bykov.",
+      "LAMIANAGA was his Memphis rap side project.",
+      "Aox Ofwar is an umbrella over several of his SoundCloud accounts. One of them, named in hieroglyphs, held recordings of everyday life and neoclassical darkwave improvisations.",
+      "Fans keep an incomplete list of the names under a Last.fm tag called \"Eck tatoo bleck tattooing.\""
+    ]
+  },
+  {
+    "id": "azeroy",
+    "type": "lore",
+    "room": "library",
+    "title": "Azeroy",
+    "pages": [
+      "Azeroy is his fictional world, with its own language and script: Azeroyyska.",
+      "It was told through a YouTube series running from late 2018 to December 2021.",
+      "When the language is spoken there are English subtitles. Most of it has never been translated.",
+      "Fans have compared it all to an ARG. Some read Azeroy as an allegory for North Korea."
+    ]
+  },
+  {
+    "id": "numbers",
+    "type": "lore",
+    "room": "library",
+    "title": "1616 / 8888",
+    "pages": [
+      "1616 means evil.",
+      "8888 means good.",
+      "Look at the titles. Azeroy Garden 8888. 8888Each Divinity. low-poly heaven 888."
+    ],
+    "tint": ["#8b0000", "#d4af37", null]
+  },
+  {
+    "id": "letters-from-the-2000s",
+    "type": "lore",
+    "room": "library",
+    "title": "Letters from the 2000s",
+    "pages": [
+      "His visuals and lyrics borrow from 2000s games: Tekken, Counter-Strike 1.6, Runescape, flash games.",
+      "The Azeroy aesthetic draws on Web 2.0 iconography, like grainy 144p footage recorded with Unregistered HyperCam."
+    ]
+  },
+  {
+    "id": "the-borrowed-melody",
+    "type": "lore",
+    "room": "library",
+    "title": "The Borrowed Melody",
+    "pages": [
+      "FLASH CASANOVA samples \"LEASE\" by Japanese composer Takeshi Abo.",
+      "It comes from My Merry May, a visual novel from 2002."
+    ]
+  },
+  {
+    "id": "roots-and-echoes",
+    "type": "lore",
+    "room": "library",
+    "title": "Roots and Echoes",
+    "pages": [
+      "According to Pitchfork writer Kieran Press-Reynolds, the music carries traces of the internet rap collective Reptilian Club Boyz and producer $ludgehammer.",
+      "It is often compared to Bladee and SpaceGhostPurrp.",
+      "In turn, he has influenced 2hollis and Ken Carson. Russian producer Dayerteq names him as an inspiration."
+    ]
+  },
+  {
+    "id": "the-ghost",
+    "type": "lore",
+    "room": "library",
+    "title": "The Ghost",
+    "pages": [
+      "As far as anyone knows, he has never given an interview.",
+      "Never performed live.",
+      "Released only a single piece of merch."
+    ]
+  },
+  {
+    "id": "the-great-erasure",
+    "type": "lore",
+    "room": "library",
+    "title": "The Great Erasure",
+    "pages": [
+      "Early 2021. He wiped his entire discography from SoundCloud and moved into hardstyle as DJ GYROTTA ZAO.",
+      "January 30, 2023. He deleted his main page and DJ GYROTTA ZAO. Soon after, LAMIANAGA.",
+      "Many believed he would never return.",
+      "One article says his growing frustration with his songs going viral on TikTok was a factor."
+    ]
+  },
+  {
+    "id": "twenty-four-days",
+    "type": "lore",
+    "room": "library",
+    "title": "24 Days",
+    "pages": [
+      "March 25, 2024. He resurfaced with an untitled mix on the account ligonis24.",
+      "After 24 days, all three of his remaining accounts were gone.",
+      "Since then he has appeared on other accounts through 2024 and 2025, with short silences in between."
+    ],
+    "requires": 5
+  },
+  {
+    "id": "the-mirror-book",
+    "type": "lore",
+    "room": "library",
+    "title": "The Mirror Book",
+    "pages": [
+      "He made songs private, made them public again, and uploaded parody versions of his own music.",
+      "In December 2022 came DESIRE, a parody of his own FLASH DESIRE from 2019."
+    ],
+    "mirrored": true
+  },
+  {
+    "id": "boing",
+    "type": "lore",
+    "room": "library",
+    "title": "Boing",
+    "pages": [
+      "Yabujincore: jumpstyle clips on TikTok, Arabic and Russian text drifting across dreamlike scenes.",
+      "The most viral one, a Roblox figure dancing jumpstyle to a DJ GYROTTA ZAO track, was posted on November 21, 2022. Over 1.2 million views.",
+      "The comment sections filled with \"boing :3\"."
+    ]
+  },
+  {
+    "id": "the-archivists",
+    "type": "lore",
+    "room": "library",
+    "title": "The Archivists",
+    "pages": [
+      "r/YABUJIN was founded on November 18, 2020.",
+      "FLASH DESIRE lives on as a re-upload on the SoundCloud account YABUJIN ARCHIVE. Fans keep a shared masterdoc cataloguing everything he has made.",
+      "CHALICE OF MIND was deleted and re-uploaded by fans. Like so many others.",
+      "This library is just one more archive."
+    ]
+  },
+  {
+    "id": "laumiu-dovanos",
+    "type": "lore",
+    "room": "library",
+    "title": "Laumių Dovanos",
+    "pages": [
+      "The EP Laumių Dovanos was released on June 28, 2025.",
+      "The title is Lithuanian. It means roughly \"Gifts of the Laumės.\"",
+      "Laumės are female supernatural beings in Lithuanian folklore."
+    ]
+  },
+  {
+    "id": "the-unanswered-letter",
+    "type": "lore",
+    "room": "library",
+    "title": "The Unanswered Letter",
+    "pages": [
+      "Among his songs is one called DEAR GATEKEEPER.",
+      "Someone wrote a letter to the guardian.",
+      "No reply has come. Yet."
+    ],
+    "requires": 8
+  },
+  {
+    "id": "limbo",
+    "type": "lore",
+    "room": "library",
+    "title": "LIMBO",
+    "pages": [
+      "1688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688168816881688"
+    ]
+  },
+  {
+    "id": "the-locked-page",
+    "type": "lore",
+    "room": "library",
+    "title": "The Locked Page",
+    "pages": [
+      "TMB UM QVBW BPM OIZLMV",
+      "The good number walks backwards."
+    ],
+    "special": "locked-page"
+  },
+  {
+    "id": "potion-of-wishes-8888",
+    "type": "song",
+    "room": "garden",
+    "title": "Potion Of Wishes 8888",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=jO-n-6BGnq4",
+    "pages": []
+  },
+  {
+    "id": "secret-garden-8888",
+    "type": "song",
+    "room": "garden",
+    "title": "Secret Garden 8888",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=cBKLrja71Ao",
+    "pages": []
+  },
+  {
+    "id": "song-8888",
+    "type": "song",
+    "room": "garden",
+    "title": "8888",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=LEIRAFYD83g",
+    "pages": []
+  },
+  {
+    "id": "early-works-bootleg",
+    "type": "song",
+    "room": "garden",
+    "title": "EARLY WORKS BOOTLEG",
+    "source": "youtube",
+    "url": "https://www.youtube.com/watch?v=lPdfkKwel6g",
+    "pages": [
+      "EARLY WORKS BOOTLEG.",
+      "Relic by the hands of those who listened, remembered, and kept.",
+      "Listen."
+    ]
+  },
+  {
+    "id": "dear-gatekeeper-poem",
+    "type": "lore",
+    "room": "garden",
+    "title": ",,,,Dear Gatekeeper,,,,",
+    "pages": [
+      "Dear Gatekeeper,",
+      "I counted sixteen, sixteen, and the lights turned red.",
+      "I counted eighty-eight, eighty-eight, and the garden answered.",
+      "Between the two is a room with no floor. They call it 1688. They call it waiting.",
+      "You kept the door. I kept the key, inside a song nobody can find anymore.",
+      "If a page is empty, it was never deleted. It was only planted.",
+      "BPM OIZLMV ZMUMUJMZA",
+      "— azeroy1688"
+    ]
+  }
+]

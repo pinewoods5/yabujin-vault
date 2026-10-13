@@ -11,9 +11,11 @@ function el(tag, className, text = '') {
 // The opened book: a DOM layer above the canvas holding the visible player.
 // Only one book (and one player) is open at a time, and closing it always stops the music.
 export class BookOverlay {
-  constructor(root, { onCloseRequest }) {
+  // Created once for the whole game; the current room sets onCloseRequest.
+  constructor(root) {
     this.root = root;
     this.media = null;
+    this.onCloseRequest = null;
 
     const book = el('div', 'book');
     book.setAttribute('role', 'dialog');
@@ -22,7 +24,7 @@ export class BookOverlay {
     const closeButton = el('button', 'book-close', '×');
     closeButton.type = 'button';
     closeButton.setAttribute('aria-label', STRINGS.closeLabel);
-    closeButton.addEventListener('click', onCloseRequest);
+    closeButton.addEventListener('click', () => this.onCloseRequest?.());
     this.title = el('h1', 'book-title');
     this.title.id = 'book-title';
     this.slot = el('div', 'book-player');
@@ -49,9 +51,12 @@ export class BookOverlay {
   open(song) {
     this.close();
     this.song = song;
-    this.title.textContent = STRINGS.bookTitle(song.title, song.year);
+    this.title.textContent = song.title;
     this.root.hidden = false;
-    this.media = createMediaPlayer(song, this.slot, { onStatus: (status) => this.showStatus(status) });
+    this.media = createMediaPlayer(song, this.slot, {
+      start: song.start,
+      onStatus: (status) => this.showStatus(status),
+    });
   }
 
   close() {

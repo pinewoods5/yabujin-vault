@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import { LibraryScene } from './LibraryScene.js';
+import { RoomScene } from './RoomScene.js';
+import { BookOverlay } from './BookOverlay.js';
 
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   width: 640,
@@ -10,5 +11,8 @@ new Phaser.Game({
   pixelArt: true,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   physics: { default: 'arcade', arcade: { debug: false } },
-  scene: [LibraryScene],
+  scene: [RoomScene],
 });
+
+// One book overlay for the whole game: rooms come and go, its window listeners stay single.
+game.registry.set('overlay', new BookOverlay(document.getElementById('book-overlay')));

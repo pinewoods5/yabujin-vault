@@ -1,47 +1,57 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDiscovery, STORAGE_KEY } from '../src/discovery.js';
+import { createDiscovery, resetProgress, STORAGE_KEY } from '../src/discovery.js';
 
 const memoryStorage = (initial = {}) => {
   const data = { ...initial };
-  return { data, getItem: (k) => data[k] ?? null, setItem: (k, v) => (data[k] = String(v)) };
+  return {
+    data,
+    getItem: (k) => data[k] ?? null,
+    setItem: (k, v) => (data[k] = String(v)),
+    removeItem: (k) => delete data[k],
+    key: (i) => Object.keys(data)[i] ?? null,
+    get length() {
+      return Object.keys(data).length;
+    },
+  };
 };
 
 test('finding a book counts once and is saved', () => {
   const storage = memoryStorage();
-  const d = createDiscovery(storage, ['a', 'b']);
-  assert.equal(d.count, 0);
-  assert.equal(d.total, 2);
+  const d = createDiscovery(storage);
   assert.equal(d.add('a'), true);
   assert.equal(d.add('a'), false);
-  assert.equal(d.add('nope'), false);
-  assert.equal(d.count, 1);
   assert.deepEqual(JSON.parse(storage.data[STORAGE_KEY]), ['a']);
-  assert.equal(createDiscovery(storage, ['a', 'b']).has('a'), true);
+  assert.equal(createDiscovery(storage).has('a'), true);
 });
 
-test('saved ids of books that are not in the library do not count, but are kept', () => {
-  const storage = memoryStorage({ [STORAGE_KEY]: JSON.stringify(['gone', 'a']) });
-  const d = createDiscovery(storage, ['a', 'b']);
-  assert.equal(d.count, 1);
-  assert.equal(d.has('gone'), false);
-  d.add('b');
-  assert.deepEqual(JSON.parse(storage.data[STORAGE_KEY]).sort(), ['a', 'b', 'gone']);
+test('progress saved before books.json is still there', () => {
+  const storage = memoryStorage({ [STORAGE_KEY]: JSON.stringify(['baroque', 'gone-song']) });
+  const d = createDiscovery(storage);
+  assert.equal(d.has('baroque'), true);
+  d.add('numbers');
+  assert.deepEqual(JSON.parse(storage.data[STORAGE_KEY]).sort(), ['baroque', 'gone-song', 'numbers']);
 });
 
 test('garbage in storage is ignored', () => {
   for (const value of ['{not json', '"a"', '{"a":1}', '[1, null, "a"]']) {
-    const d = createDiscovery(memoryStorage({ [STORAGE_KEY]: value }), ['a']);
-    assert.equal(d.count, value.includes('"a"]') ? 1 : 0, value);
+    const d = createDiscovery(memoryStorage({ [STORAGE_KEY]: value }));
+    assert.equal(d.has('a'), value.includes('"a"]'), value);
   }
 });
 
 test('a storage that throws (or is missing) still works in memory', () => {
   const throwing = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } };
   for (const storage of [throwing, null]) {
-    const d = createDiscovery(storage, ['a']);
+    const d = createDiscovery(storage);
     assert.equal(d.add('a'), true);
     assert.equal(d.has('a'), true);
-    assert.equal(d.count, 1);
   }
+});
+
+test('reset forgets only what this game saved', () => {
+  const storage = memoryStorage({ [STORAGE_KEY]: '["a"]', 'yabujin-vault/garden/v1': '1', 'other-site': 'keep' });
+  resetProgress(storage);
+  assert.deepEqual(storage.data, { 'other-site': 'keep' });
+  resetProgress(null);
 });
