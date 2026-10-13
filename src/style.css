@@ -50,6 +50,26 @@ body {
   display: block;
 }
 
+.book-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 100%;
+  padding: 0 28px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.book-empty p {
+  margin: 0;
+}
+
+.book-source {
+  color: #ff4fa3;
+}
+
 .book-status {
   min-height: 1.4em;
   margin: 12px 0 0;

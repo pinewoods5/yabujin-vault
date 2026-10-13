@@ -48,6 +48,7 @@ export class BookOverlay {
 
   open(song) {
     this.close();
+    this.song = song;
     this.title.textContent = STRINGS.bookTitle(song.title, song.year);
     this.root.hidden = false;
     this.media = createMediaPlayer(song, this.slot, { onStatus: (status) => this.showStatus(status) });
@@ -65,6 +66,22 @@ export class BookOverlay {
   }
 
   showStatus(status) {
+    if (status.error) return this.showEmptyPages(status.error);
     this.status.textContent = STRINGS.status[status] ?? '';
+  }
+
+  // The player is gone (the adapter removed it); the book says why instead.
+  showEmptyPages(kind) {
+    const page = el('div', 'book-empty');
+    page.append(el('p', '', STRINGS.errors[kind]));
+    if (kind !== 'gone' && /^https?:\/\//.test(this.song.url)) {
+      const link = el('a', 'book-source', STRINGS.listenElsewhere[this.song.source] ?? STRINGS.listenElsewhereFallback);
+      link.href = this.song.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      page.append(link);
+    }
+    this.slot.replaceChildren(page);
+    this.status.textContent = '';
   }
 }
