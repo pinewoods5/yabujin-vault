@@ -9,11 +9,13 @@ const PADDING = 24;
 // Undertale-style box at the bottom of the screen. Text types out one character at a time;
 // skip() shows the whole page, advance() skips or turns to the next page.
 // Pages are { text, tint?, mirrored? }; onPage(page) is called as each box of a page starts.
+// Like Undertale, the box moves to the top of the screen when `atTop` (the player is low down).
 export class DialogueBox {
   constructor(scene) {
     this.scene = scene;
     const { width, height } = scene.scale;
     const top = height - HEIGHT - MARGIN;
+    this.topOffset = MARGIN - top;
     const textWidth = width - MARGIN * 2 - PADDING * 2;
 
     const frame = scene.add
@@ -36,7 +38,8 @@ export class DialogueBox {
     return this.shown < this.current.length;
   }
 
-  show(pages, { onPage, onDone } = {}) {
+  show(pages, { onPage, onDone, atTop = false } = {}) {
+    this.container.y = atTop ? this.topOffset : 0;
     // Wrap up front so words don't jump lines while typing, and split pages that don't fit.
     // A word longer than a whole line (LIMBO's endless numbers) is not split into pages: it fills
     // the box and keeps scrolling as it types.

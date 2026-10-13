@@ -1,5 +1,8 @@
 // Every piece of in-game text lives here, so wording can be changed in one place.
 export const STRINGS = {
+  gate: {
+    intro: ['...', 'Beyond me lies the Garden.', 'Only the words open it.'],
+  },
   counters: (songs, fragments) => `Songs ${songs.found}/${songs.total}   Fragments ${fragments.found}/${fragments.total}`,
 
   closeHint: '[X/Esc] Close',

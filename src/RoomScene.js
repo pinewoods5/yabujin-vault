@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import booksData from '../data/books.json';
 import { TILE, loadRoom } from './room.js';
-import { validateBooks, placeBooks, bookPages, isVisible, counts } from './books.js';
+import { validateBooks, placeBooks, bookPages, isVisible, counts, speech } from './books.js';
 import { DialogueBox } from './DialogueBox.js';
 import { browserStorage, createDiscovery, resetProgress } from './discovery.js';
 import { STRINGS } from './strings.js';
 import { FONT_FAMILY, TEST_STRING } from './font.js';
+import { Gatekeeper } from './Gatekeeper.js';
 
 const PLAYER_SPEED = 120;
 const COLORS = {
@@ -79,6 +80,10 @@ export class RoomScene extends Phaser.Scene {
     this.placeBooks();
     this.createPlayer();
     this.physics.add.collider(this.player, solids);
+    if (this.room.gatekeeper) {
+      this.gatekeeper = new Gatekeeper(this, this.room.gatekeeper, tileCenter);
+      this.physics.add.collider(this.player, this.gatekeeper.figure);
+    }
     this.createTint();
     this.dialogue = new DialogueBox(this);
     this.createCounters();
@@ -102,6 +107,12 @@ export class RoomScene extends Phaser.Scene {
     if (this.room.lectern) {
       const { x, y } = tileCenter(this.room.lectern);
       solids.add(this.add.rectangle(x, y + 4, 24, 20, COLORS.shelf).setStrokeStyle(2, COLORS.shelfEdge));
+    }
+    if (this.room.door) {
+      // A closed door is just more wall, until it opens.
+      const { x, y } = tileCenter(this.room.door);
+      this.doorBlock = this.add.rectangle(x, y, TILE, TILE, COLORS.wall);
+      solids.add(this.doorBlock);
     }
     return solids;
   }
@@ -191,8 +202,22 @@ export class RoomScene extends Phaser.Scene {
   }
 
   interact() {
-    const entry = this.books.get(tileKey(this.frontTile()));
+    const front = tileKey(this.frontTile());
+    if (this.gatekeeper && front === tileKey(this.gatekeeper.tile)) return this.gatekeeper.talk();
+    const entry = this.books.get(front);
     if (entry?.visible) this.read(entry);
+  }
+
+  // A few lines of dialogue (for NPCs), then back to walking and on to `then`.
+  say(lines, then) {
+    this.mode = 'dialogue';
+    this.dialogue.show(speech(lines), {
+      atTop: this.playerIsLow(),
+      onDone: () => {
+        this.mode = 'walking';
+        then?.();
+      },
+    });
   }
 
   // Songs: pages (or just the title), then the book opens and plays. Lore: pages only.
@@ -200,6 +225,7 @@ export class RoomScene extends Phaser.Scene {
     const { book } = entry;
     this.mode = 'dialogue';
     this.dialogue.show(bookPages(book), {
+      atTop: this.playerIsLow(),
       onPage: (page) => this.setTint(page.tint),
       onDone: () => {
         this.setTint(null);
@@ -212,6 +238,11 @@ export class RoomScene extends Phaser.Scene {
         this.overlay.open(book);
       },
     });
+  }
+
+  // The dialogue box would cover the player down there, so it goes to the top instead.
+  playerIsLow() {
+    return this.player.y > this.scale.height / 2;
   }
 
   closeBook() {
