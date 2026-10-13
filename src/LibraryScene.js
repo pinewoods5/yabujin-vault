@@ -5,6 +5,7 @@ import { validateSongs, placeBooks, dialoguePages } from './songs.js';
 import { DialogueBox } from './DialogueBox.js';
 import { browserStorage, createDiscovery } from './discovery.js';
 import { STRINGS } from './strings.js';
+import { BookOverlay } from './BookOverlay.js';
 
 const PLAYER_SPEED = 120;
 const COLORS = { wall: 0x2b2140, shelf: 0x5a3a22, shelfEdge: 0x2e1c10, spine: 0x77727f, player: 0xffffff, eye: 0x100818 };
@@ -13,6 +14,8 @@ const DOWN = { x: 0, y: 1 };
 const LEFT = { x: -1, y: 0 };
 const RIGHT = { x: 1, y: 0 };
 const CONFIRM_KEYS = ['KeyZ', 'Enter', 'NumpadEnter'];
+// Arrow keys close the book too: walking away from the shelf stops the music.
+const CLOSE_KEYS = ['Escape', 'KeyX', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 const FOUND_COLORS = [0xff4fa3, 0x7cf3ff, 0xc8ff5a, 0xffb347, 0xb28cff, 0xff6b6b];
 
 const tileCenter = ({ col, row }) => ({ x: col * TILE + TILE / 2, y: row * TILE + TILE / 2 });
@@ -32,7 +35,7 @@ export class LibraryScene extends Phaser.Scene {
 
   create() {
     this.room = parseRoom();
-    this.mode = 'walking'; // walking | dialogue
+    this.mode = 'walking'; // walking | dialogue | book
     this.cursors = this.input.keyboard.createCursorKeys();
     // Action keys are read from the DOM directly: Phaser 3.90 re-emits a keydown when the key is
     // pressed and released within the same frame, which would open and close things twice.
@@ -46,6 +49,11 @@ export class LibraryScene extends Phaser.Scene {
     this.physics.add.collider(this.player, solids);
     this.dialogue = new DialogueBox(this);
     this.createCounter();
+
+    this.overlay = new BookOverlay(document.getElementById('book-overlay'), {
+      onCloseRequest: () => this.closeBook(),
+    });
+    this.events.once('shutdown', () => this.overlay.close());
   }
 
   buildRoom() {
@@ -112,6 +120,7 @@ export class LibraryScene extends Phaser.Scene {
     if (this.mode === 'walking' && confirm) this.interact();
     else if (this.mode === 'dialogue' && confirm) this.dialogue.advance();
     else if (this.mode === 'dialogue' && event.code === 'KeyX') this.dialogue.skip();
+    else if (this.mode === 'book' && CLOSE_KEYS.includes(event.code)) this.closeBook();
   }
 
   interact() {
@@ -120,8 +129,15 @@ export class LibraryScene extends Phaser.Scene {
     this.mode = 'dialogue';
     this.dialogue.show(dialoguePages(book.song), () => {
       this.discover(book);
-      this.mode = 'walking';
+      this.mode = 'book';
+      this.overlay.open(book.song);
     });
+  }
+
+  closeBook() {
+    if (this.mode !== 'book') return;
+    this.overlay.close();
+    this.mode = 'walking';
   }
 
   // The tile just in front of the player, in the direction they face.
