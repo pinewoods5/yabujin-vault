@@ -3,6 +3,8 @@ import songsData from '../data/songs.json';
 import { TILE, parseRoom } from './room.js';
 import { validateSongs, placeBooks, dialoguePages } from './songs.js';
 import { DialogueBox } from './DialogueBox.js';
+import { browserStorage, createDiscovery } from './discovery.js';
+import { STRINGS } from './strings.js';
 
 const PLAYER_SPEED = 120;
 const COLORS = { wall: 0x2b2140, shelf: 0x5a3a22, shelfEdge: 0x2e1c10, spine: 0x77727f, player: 0xffffff, eye: 0x100818 };
@@ -11,9 +13,17 @@ const DOWN = { x: 0, y: 1 };
 const LEFT = { x: -1, y: 0 };
 const RIGHT = { x: 1, y: 0 };
 const CONFIRM_KEYS = ['KeyZ', 'Enter', 'NumpadEnter'];
+const FOUND_COLORS = [0xff4fa3, 0x7cf3ff, 0xc8ff5a, 0xffb347, 0xb28cff, 0xff6b6b];
 
 const tileCenter = ({ col, row }) => ({ x: col * TILE + TILE / 2, y: row * TILE + TILE / 2 });
 const tileKey = ({ col, row }) => `${col},${row}`;
+
+// Each found book keeps the same colour between visits.
+function foundColor(id) {
+  let hash = 0;
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return FOUND_COLORS[hash % FOUND_COLORS.length];
+}
 
 export class LibraryScene extends Phaser.Scene {
   constructor() {
@@ -35,6 +45,7 @@ export class LibraryScene extends Phaser.Scene {
     this.createPlayer();
     this.physics.add.collider(this.player, solids);
     this.dialogue = new DialogueBox(this);
+    this.createCounter();
   }
 
   buildRoom() {
@@ -62,6 +73,28 @@ export class LibraryScene extends Phaser.Scene {
       const spine = this.add.rectangle(x, y, 12, 24, COLORS.spine).setStrokeStyle(2, COLORS.shelfEdge).setDepth(1);
       this.books.set(tileKey(slot), { song, spine });
     }
+
+    this.discovery = createDiscovery(browserStorage(), [...this.books.values()].map((book) => book.song.id));
+    for (const book of this.books.values()) {
+      if (this.discovery.has(book.song.id)) book.spine.setFillStyle(foundColor(book.song.id));
+    }
+  }
+
+  createCounter() {
+    this.counter = this.add
+      .text(12, 8, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffffff' })
+      .setDepth(10);
+    this.updateCounter();
+  }
+
+  updateCounter() {
+    this.counter.setText(STRINGS.discovered(this.discovery.count, this.discovery.total));
+  }
+
+  discover(book) {
+    if (!this.discovery.add(book.song.id)) return;
+    book.spine.setFillStyle(foundColor(book.song.id));
+    this.updateCounter();
   }
 
   createPlayer() {
@@ -86,6 +119,7 @@ export class LibraryScene extends Phaser.Scene {
     if (!book) return;
     this.mode = 'dialogue';
     this.dialogue.show(dialoguePages(book.song), () => {
+      this.discover(book);
       this.mode = 'walking';
     });
   }
