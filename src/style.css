@@ -1,3 +1,9 @@
+:root {
+  /* Same list as FONT_FAMILY in src/font.js. */
+  --font: Menlo, Consolas, "DejaVu Sans Mono", monospace, "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols 2",
+    "Geeza Pro", "Noto Naskh Arabic", sans-serif;
+}
+
 html,
 body {
   margin: 0;
@@ -31,7 +37,7 @@ body {
   background: #000;
   border: 4px solid #fff;
   color: #fff;
-  font: 18px/1.4 monospace;
+  font: 18px/1.4 var(--font);
 }
 
 .book-title {
@@ -89,7 +95,7 @@ body {
   border: 0;
   background: none;
   color: #fff;
-  font: 28px/1 monospace;
+  font: 28px/1 var(--font);
   cursor: pointer;
 }
 

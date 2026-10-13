@@ -27,6 +27,7 @@ export class BookOverlay {
     closeButton.addEventListener('click', () => this.onCloseRequest?.());
     this.title = el('h1', 'book-title');
     this.title.id = 'book-title';
+    this.title.dir = 'auto';
     this.slot = el('div', 'book-player');
     this.status = el('p', 'book-status');
     this.hint = el('p', 'book-hint', STRINGS.closeHint);

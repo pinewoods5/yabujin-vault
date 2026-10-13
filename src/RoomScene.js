@@ -5,6 +5,7 @@ import { validateBooks, placeBooks, bookPages, isVisible, counts } from './books
 import { DialogueBox } from './DialogueBox.js';
 import { browserStorage, createDiscovery, resetProgress } from './discovery.js';
 import { STRINGS } from './strings.js';
+import { FONT_FAMILY, TEST_STRING } from './font.js';
 
 const PLAYER_SPEED = 120;
 const COLORS = {
@@ -24,6 +25,8 @@ const CONFIRM_KEYS = ['KeyZ', 'Enter', 'NumpadEnter'];
 // Arrow keys close the book too: walking away from the shelf stops the music.
 const CLOSE_KEYS = ['Escape', 'KeyX', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 const FOUND_COLORS = [0xff4fa3, 0x7cf3ff, 0xc8ff5a, 0xffb347, 0xb28cff, 0xff6b6b];
+const PAGE_TINT_ALPHA = 0.35;
+const ROOM_TINT_ALPHA = 0.18;
 
 const warn = (problem) => console.warn(`[Yabujin Vault] ${problem}`);
 const checked = validateBooks(booksData);
@@ -76,6 +79,7 @@ export class RoomScene extends Phaser.Scene {
     this.placeBooks();
     this.createPlayer();
     this.physics.add.collider(this.player, solids);
+    this.createTint();
     this.dialogue = new DialogueBox(this);
     this.createCounters();
 
@@ -115,21 +119,38 @@ export class RoomScene extends Phaser.Scene {
       if (this.discovery.has(book.id)) spine.setFillStyle(foundColor(book.id));
       this.books.set(tileKey(tile), { book, spine, visible: false });
     }
-    this.refreshShelves();
+    this.refreshShelves({ fade: false });
   }
 
-  // Shows books whose "requires" is met by the songs found so far.
-  refreshShelves() {
+  // Shows books whose "requires" is met by the songs found so far; new ones fade in.
+  refreshShelves({ fade = true } = {}) {
     const songsFound = BOOKS.filter((book) => book.type === 'song' && this.discovery.has(book.id)).length;
     for (const entry of this.books.values()) {
-      entry.visible = isVisible(entry.book, songsFound);
-      entry.spine.setVisible(entry.visible);
+      const visible = isVisible(entry.book, songsFound);
+      if (fade && visible && !entry.visible) {
+        entry.spine.setVisible(true).setAlpha(0);
+        this.tweens.add({ targets: entry.spine, alpha: 1, duration: 900 });
+      } else entry.spine.setVisible(visible);
+      entry.visible = visible;
     }
+  }
+
+  createTint() {
+    const { width, height } = this.scale;
+    this.tint = this.add.rectangle(0, 0, width, height, 0x000000, 0).setOrigin(0).setDepth(8);
+    this.setTint(null);
+  }
+
+  // A page's colour washes over the room while it is shown; otherwise the room's own tint.
+  setTint(color) {
+    const [hex, alpha] = color ? [color, PAGE_TINT_ALPHA] : [this.room.tint, ROOM_TINT_ALPHA];
+    if (!hex) this.tint.setFillStyle(0x000000, 0);
+    else this.tint.setFillStyle(Phaser.Display.Color.HexStringToColor(hex).color, alpha);
   }
 
   createCounters() {
     this.counters = this.add
-      .text(12, 8, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffffff' })
+      .text(12, 8, '', { fontFamily: FONT_FAMILY, fontSize: '16px', color: '#ffffff', testString: TEST_STRING })
       .setDepth(10);
     this.updateCounters();
   }
@@ -179,7 +200,9 @@ export class RoomScene extends Phaser.Scene {
     const { book } = entry;
     this.mode = 'dialogue';
     this.dialogue.show(bookPages(book), {
+      onPage: (page) => this.setTint(page.tint),
       onDone: () => {
+        this.setTint(null);
         this.discover(entry);
         if (book.type !== 'song') {
           this.mode = 'walking';

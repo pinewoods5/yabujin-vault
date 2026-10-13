@@ -5,8 +5,10 @@ export const TILE = 32;
 // =  empty shelf     1–9  a book slot on that shelf, filled left to right from `shelves`
 // L  lectern holding the room's "locked-page" book
 //    (space) nothing: outside the room
+// `tint` washes the whole room in a colour (null = none).
 export const ROOMS = {
   library: {
+    tint: null,
     map: [
       '####################',
       '#..................#',
@@ -74,6 +76,6 @@ export function parseRoom(map) {
 }
 
 export function loadRoom(name) {
-  const { map, shelves } = ROOMS[name];
-  return { name, ...parseRoom(map), shelves };
+  const { map, shelves, tint } = ROOMS[name];
+  return { name, ...parseRoom(map), shelves, tint };
 }
