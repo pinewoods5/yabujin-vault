@@ -1,3 +1,5 @@
+import { STRINGS } from './strings.js';
+
 // Sources a book can play from. A new source needs an adapter in src/media/ too.
 export const SOURCES = ['youtube'];
 
@@ -59,4 +61,10 @@ export function placeBooks(songs, slots) {
     else books.push({ song, slot: shelfSlots.shift() });
   }
   return { books, problems };
+}
+
+// What the dialogue box says before the book opens.
+export function dialoguePages(song) {
+  const lore = song.lore ? song.lore.split(/\n\s*\n/).map((paragraph) => `* ${paragraph.trim()}`) : [STRINGS.emptyLore];
+  return [STRINGS.found(song.title, song.year), ...lore];
 }

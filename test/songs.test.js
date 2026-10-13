@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import songsData from '../data/songs.json' with { type: 'json' };
-import { validateSongs, placeBooks } from '../src/songs.js';
+import { validateSongs, placeBooks, dialoguePages } from '../src/songs.js';
+import { STRINGS } from '../src/strings.js';
 import { parseRoom } from '../src/room.js';
 
 const song = (fields) => ({ id: 'a', title: 'A', year: null, source: 'youtube', url: 'https://youtu.be/x', shelf: 1, lore: '', ...fields });
@@ -57,4 +58,13 @@ test('books go left to right; full and unknown shelves are reported', () => {
   );
   assert.deepEqual(books.map((b) => [b.song.id, b.slot.col]), [['a', 1], ['b', 2]]);
   assert.deepEqual(problems, ['"c": shelf 1 is full — not placed', '"d": there is no shelf 9 — not placed']);
+});
+
+test('dialogue: title line, then lore paragraphs or the neutral placeholder', () => {
+  assert.deepEqual(dialoguePages(song({ title: 'Baroque' })), ['* You found "Baroque".', STRINGS.emptyLore]);
+  assert.deepEqual(dialoguePages(song({ title: 'Baroque', year: 2019, lore: 'One.\n\n  Two.' })), [
+    '* You found "Baroque" (2019).',
+    '* One.',
+    '* Two.',
+  ]);
 });

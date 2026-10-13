@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import songsData from '../data/songs.json';
 import { TILE, parseRoom } from './room.js';
-import { validateSongs, placeBooks } from './songs.js';
+import { validateSongs, placeBooks, dialoguePages } from './songs.js';
+import { DialogueBox } from './DialogueBox.js';
 
 const PLAYER_SPEED = 120;
 const COLORS = { wall: 0x2b2140, shelf: 0x5a3a22, shelfEdge: 0x2e1c10, spine: 0x77727f, player: 0xffffff, eye: 0x100818 };
@@ -9,6 +10,7 @@ const UP = { x: 0, y: -1 };
 const DOWN = { x: 0, y: 1 };
 const LEFT = { x: -1, y: 0 };
 const RIGHT = { x: 1, y: 0 };
+const CONFIRM_KEYS = ['KeyZ', 'Enter', 'NumpadEnter'];
 
 const tileCenter = ({ col, row }) => ({ x: col * TILE + TILE / 2, y: row * TILE + TILE / 2 });
 const tileKey = ({ col, row }) => `${col},${row}`;
@@ -20,12 +22,19 @@ export class LibraryScene extends Phaser.Scene {
 
   create() {
     this.room = parseRoom();
+    this.mode = 'walking'; // walking | dialogue
     this.cursors = this.input.keyboard.createCursorKeys();
+    // Action keys are read from the DOM directly: Phaser 3.90 re-emits a keydown when the key is
+    // pressed and released within the same frame, which would open and close things twice.
+    const onKeyDown = (event) => this.onKeyDown(event);
+    window.addEventListener('keydown', onKeyDown);
+    this.events.once('shutdown', () => window.removeEventListener('keydown', onKeyDown));
 
     const solids = this.buildRoom();
     this.placeBooks();
     this.createPlayer();
     this.physics.add.collider(this.player, solids);
+    this.dialogue = new DialogueBox(this);
   }
 
   buildRoom() {
@@ -64,7 +73,36 @@ export class LibraryScene extends Phaser.Scene {
     this.facing = DOWN;
   }
 
+  onKeyDown(event) {
+    if (event.repeat) return;
+    const confirm = CONFIRM_KEYS.includes(event.code);
+    if (this.mode === 'walking' && confirm) this.interact();
+    else if (this.mode === 'dialogue' && confirm) this.dialogue.advance();
+    else if (this.mode === 'dialogue' && event.code === 'KeyX') this.dialogue.skip();
+  }
+
+  interact() {
+    const book = this.books.get(tileKey(this.frontTile()));
+    if (!book) return;
+    this.mode = 'dialogue';
+    this.dialogue.show(dialoguePages(book.song), () => {
+      this.mode = 'walking';
+    });
+  }
+
+  // The tile just in front of the player, in the direction they face.
+  frontTile() {
+    const x = this.player.x + this.facing.x * (this.player.width / 2 + 12);
+    const y = this.player.y + this.facing.y * (this.player.height / 2 + 12);
+    return { col: Math.floor(x / TILE), row: Math.floor(y / TILE) };
+  }
+
   update() {
+    if (this.mode !== 'walking') {
+      this.player.body.setVelocity(0, 0);
+      return;
+    }
+
     const dx = (this.cursors.right.isDown ? 1 : 0) - (this.cursors.left.isDown ? 1 : 0);
     const dy = (this.cursors.down.isDown ? 1 : 0) - (this.cursors.up.isDown ? 1 : 0);
 
